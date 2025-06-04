@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_file
 import subprocess, os, requests
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -14,20 +13,17 @@ def build_video():
         image_files = [f"scene{i+1}.png" for i in range(8)]
         audio_file = "narration.mp3"
 
-        # input.txt dosyasını oluştur
         with open("input.txt", "w") as f:
             for image in image_files:
                 f.write(f"file '{image}'\n")
                 f.write("duration 5\n")
             f.write(f"file '{image_files[-1]}'\n")
 
-        # Görselleri birleştir (temp.mp4)
         subprocess.run([
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", "input.txt", "-vsync", "vfr", "-pix_fmt", "yuv420p", "temp.mp4"
         ], check=True)
 
-        # Sesi ekle (final_video.mp4)
         if not os.path.exists("temp.mp4") or not os.path.exists("narration.mp3"):
             return jsonify({'error': 'temp.mp4 veya narration.mp3 bulunamadı'}), 500
 
@@ -59,13 +55,11 @@ def upload_files():
     try:
         uploaded = []
 
-        # mp3 gibi gerçek dosyalar
         for file_key in request.files:
             file = request.files[file_key]
             file.save(f"./{file.filename}")
             uploaded.append(file.filename)
 
-        # görsel URL’leri
         for key in request.form:
             if key not in uploaded:
                 file_url = request.form[key]
